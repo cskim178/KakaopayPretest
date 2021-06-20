@@ -104,7 +104,7 @@ public class PaymentService {
 		if (paymentInfo.isPresent()) {
 			paymentVO = paymentInfo.get();
 		} else {
-			return null;
+			return null; 
 		}
 		
 		paymentinput.setAmount(paymentVO.getAmount());
