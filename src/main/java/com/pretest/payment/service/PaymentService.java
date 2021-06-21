@@ -1,18 +1,20 @@
 package com.pretest.payment.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import com.pretest.payment.entity.InfoResponse;
+import com.pretest.payment.entity.Payment;
 import com.pretest.payment.entity.PaymentResponse;
-import com.pretest.payment.entity.PaymentVO;
 import com.pretest.payment.entity.Transaction;
 import com.pretest.payment.repository.PaymentRepository;
 import com.pretest.payment.repository.TransactionRepository;
-import com.pretest.payment.util.AES256Util;
 import com.pretest.payment.util.ConstantsVariable;
 import com.pretest.payment.util.Utility;
 
@@ -26,30 +28,27 @@ public class PaymentService {
 	private PaymentRepository paymentRepository;
 
 	@Transactional
-	public PaymentResponse payment(PaymentVO paymentVO, String opVat) {		
-		AES256Util encr = new AES256Util();
-//		if (Utility.validationCheck(paymentRequest)) {
+	public PaymentResponse payment(Payment paymentInput) {
+
+//		if (Utility.validationCheck(paymentInput)) {
 //			return null;
 //		}
-		
-		paymentVO.setPayType(ConstantsVariable.TYPE_PAYMENT);
-		
-		int vat = Utility.calcVat(opVat, paymentVO.getAmount());
-		paymentVO.setVat(vat);
-		
-		String encrCardInfo = String.valueOf(paymentVO.getCardNum()) + ConstantsVariable.SYMBOL_SEPARATION
-				+ String.valueOf(paymentVO.getMmyy()) + ConstantsVariable.SYMBOL_SEPARATION
-				+ String.valueOf(paymentVO.getCvc());		
-		paymentVO.setEncrCardInfo(encr.encrypt(encrCardInfo));
 
-		paymentRepository.save(paymentVO);
+		if (ObjectUtils.isEmpty(paymentInput.getVat())) {
+			paymentInput.setVat((int) Math.round(((double) paymentInput.getAmount() / 11)));
+		}
+
+		paymentInput.setPayType(ConstantsVariable.TYPE_PAYMENT);
+		Utility.encrCardInfo(paymentInput);
+
+		paymentRepository.save(paymentInput);
 
 		Transaction tran = new Transaction();
-		tran.setContent(Utility.makePgString(paymentVO));
+		tran.setContent(Utility.makePgString(paymentInput));
 		transactionRepository.save(tran);
 
 		PaymentResponse paymentResponse = new PaymentResponse();
-		paymentResponse.setId(paymentVO.getId());
+		paymentResponse.setId(paymentInput.getId());
 		paymentResponse.setContent(tran.getContent());
 
 		return paymentResponse;
@@ -57,12 +56,10 @@ public class PaymentService {
 
 	@Transactional(readOnly = true)
 	public InfoResponse getPaymentInfoById(String id) {
-
 		InfoResponse infoResponse = new InfoResponse();
-		PaymentVO paymentVO = new PaymentVO();
-		AES256Util decr = new AES256Util();
+		Payment paymentVO = new Payment();
 
-		Optional<PaymentVO> paymentInfo = paymentRepository.findById(id);
+		Optional<Payment> paymentInfo = paymentRepository.findById(id);
 
 		if (paymentInfo.isPresent()) {
 			paymentVO = paymentInfo.get();
@@ -71,18 +68,10 @@ public class PaymentService {
 		}
 
 		infoResponse.setId(paymentVO.getId());
-
-		String decrCardInfo = paymentVO.getEncrCardInfo();
-		decrCardInfo = decr.decrypt(decrCardInfo);
-		String str[] = decrCardInfo.split(ConstantsVariable.SYMBOL_SEPARATION);
-
-		infoResponse.setCardNum(Utility.masking(str[0], 6, 3));
-
-		// TODO String validTerm = Utility.lPad(String.valueOf(paymentVO.getMmyy()), 4,
-		// ConstantsVariable.SYMBOL_SPACE);
-		infoResponse.setMmyy(Integer.valueOf(str[1]));
-
-		infoResponse.setCvc(Integer.valueOf(str[2]));
+		Utility.decrCardInfo(paymentVO);
+		infoResponse.setCardNum(paymentVO.getCardNum());
+		infoResponse.setMmyy(paymentVO.getMmyy());
+		infoResponse.setCvc(paymentVO.getCvc());
 		infoResponse.setAmount(paymentVO.getAmount());
 		infoResponse.setVat(paymentVO.getVat());
 
@@ -96,35 +85,93 @@ public class PaymentService {
 	}
 
 	@Transactional
-	public PaymentResponse paymentCancel(PaymentVO paymentVO, String opVat) {
-		PaymentVO paymentinput = new PaymentVO();
-		
-		Optional<PaymentVO> paymentInfo = paymentRepository.findById(paymentVO.getId());
+	public PaymentResponse paymentCancel(Payment paymentInput) {
+		// 입력된 취소 요청 정보 paymentInput
+		// DB에서 가져온 결재 정보 paymentDB
+		// DB에 입력할 결재취소 정보 paymentDto
+		Payment paymentDB = new Payment();
+		Payment paymentDto = new Payment();
 
-		if (paymentInfo.isPresent()) {
-			paymentVO = paymentInfo.get();
+		// 입력된 값으로 결제 조회
+		Optional<Payment> paymentDbObj = paymentRepository.findById(paymentInput.getId());
+		if (paymentDbObj.isPresent()) {
+			paymentDB = paymentDbObj.get();
 		} else {
-			return null; 
+			return null;// 결제 이력 없음!!!
 		}
-		
-		paymentinput.setAmount(paymentVO.getAmount());
-		paymentinput.setEncrCardInfo(paymentVO.getEncrCardInfo());
-		paymentinput.setInstMm(0);
-		paymentinput.setPayType(ConstantsVariable.TYPE_CANCLE);
-		paymentinput.setRefId(paymentVO.getId());
-		
-		int vat = Utility.calcVat(opVat, paymentVO.getAmount());
-		paymentinput.setVat(vat);
-		
-		paymentRepository.save(paymentinput);
-		
+
+		// 취소 이력을 가져온다.
+		ArrayList<Payment> paymentCList = new ArrayList<Payment>();
+		List<Object[]> cancelAmtVatSumObj = paymentRepository.getAmtVatSumByRefId(paymentInput.getId());
+		Object[] cancelAmtVatSum = null;
+		int amtSum = 0;
+		int vatSum = 0;
+
+		if (ObjectUtils.isEmpty(cancelAmtVatSumObj)) {
+			// return null;// 결재취소 이력 없음!!
+		} else {
+			cancelAmtVatSum = cancelAmtVatSumObj.get(0);
+			if (!ObjectUtils.isEmpty(cancelAmtVatSum[0])) {
+				amtSum = Integer.valueOf(cancelAmtVatSum[0].toString());
+			}
+			if (!ObjectUtils.isEmpty(cancelAmtVatSum[1])) {
+				vatSum = Integer.valueOf(cancelAmtVatSum[1].toString());
+			}
+		}
+
+		// 진행불가
+		// 결제 이력 없음
+		if (ObjectUtils.isEmpty(paymentDB) || (!paymentDB.getPayType().equals(ConstantsVariable.TYPE_PAYMENT))) {
+			System.out.println("// 0. 결제 이력 없음");
+			return null;
+		}
+
+		// 취소불가 : 취소가능 금액 = 결재금액 - sum(취소금액) < 요청금액
+		if (paymentDB.getAmount() - amtSum < paymentInput.getAmount()) {
+			System.out.println("// 취소가능 금액 = 결재금액 - sum(취소금액) < 취소 요청금액");
+			return null;
+		}
+		// 전체취소(잔액 모두 취소)면
+		else if (paymentDB.getAmount() - amtSum == paymentInput.getAmount()) {
+
+			// 입력받은 vat가 없으면 잔액(vat)으로 처리하여 전체 취소가 정상 수행되게 한다.
+			if (ObjectUtils.isEmpty(paymentInput.getVat())) {
+				paymentInput.setVat(vatSum);
+			} else if (!(paymentDB.getVat() - vatSum == paymentInput.getVat())) {
+				System.out.println("// 잔액 모두 취소일때는 남는 vat도 없어야..");
+				return null;
+			}
+		}
+		// 부분취소 : 취소가능 금액 = 결재금액 - sum(취소금액) > 취소 요청금액
+		else {
+			// 입력받은 vat가 없으면 취소요청금액/11
+			if (ObjectUtils.isEmpty(paymentInput.getVat())) {
+				paymentInput.setVat((int) Math.round(((double) paymentInput.getAmount() / 11)));
+			}
+			// 취소가능 vat = 결재vat - sum(취소vat) < 요청vat paymentDB.getVat() - vatSum < paymentInput.getVat()			
+			if (paymentDB.getVat() - vatSum < paymentInput.getVat()) {
+				System.out.println("// 취소가능 vat = 결재vat - sum(취소vat) < 취소 요청vat");
+				return null;
+			}			
+		}
+
+		paymentDto.setAmount(paymentInput.getAmount());
+		paymentDto.setCardNum(paymentDB.getCardNum());
+		paymentDto.setEncrCardInfo(paymentDB.getEncrCardInfo());
+		paymentDto.setInstMm("00");
+		paymentDto.setPayType(ConstantsVariable.TYPE_CANCLE);
+		paymentDto.setRefId(paymentInput.getId());
+
+		paymentRepository.save(paymentDto);
+
 		Transaction tran = new Transaction();
-		tran.setContent(Utility.makePgString(paymentinput));
-		
+		tran.setContent(Utility.makePgString(paymentDto));
+		transactionRepository.save(tran);
+
 		PaymentResponse paymentResponse = new PaymentResponse();
-		paymentResponse.setId(paymentVO.getId());
+		paymentResponse.setId(paymentDto.getId());
 		paymentResponse.setContent(tran.getContent());
-		
+
 		return paymentResponse;
 	}
 

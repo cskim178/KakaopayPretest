@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pretest.payment.entity.InfoResponse;
 import com.pretest.payment.entity.PaymentResponse;
-import com.pretest.payment.entity.PaymentVO;
+import com.pretest.payment.entity.Payment;
 import com.pretest.payment.service.PaymentService;
 import com.pretest.payment.util.ConstantsVariable;
 
@@ -20,18 +20,17 @@ public class PaymentController {
 	@Autowired
 	private PaymentService paymentService;
 
-	@PostMapping(value = "/api/payment", produces = "application/json;charset=utf-8")
+	@PostMapping(value = "/payment", produces = "application/json;charset=utf-8")
 	@ResponseBody
-	public ResponseEntity<?> payment(@RequestParam(required = false, value = "opVat") String opVat,
-			PaymentVO paymentVO) {
+	public ResponseEntity<?> payment(Payment paymentInput) {
 		
 		PaymentResponse paymentResponse = new PaymentResponse();
-		paymentResponse = paymentService.payment(paymentVO, opVat);
+		paymentResponse = paymentService.payment(paymentInput);
 
 		return new ResponseEntity<>(paymentResponse, HttpStatus.OK);
 	}
 
-	@PostMapping(value = "/api/info", produces = "application/json;charset=utf-8")
+	@PostMapping(value = "/info", produces = "application/json;charset=utf-8")
 	public ResponseEntity<?> getInfo(@RequestParam(value = "id") String id) {
 		InfoResponse infoResponse = new InfoResponse();
 		infoResponse = paymentService.getPaymentInfoById(id);
@@ -39,13 +38,12 @@ public class PaymentController {
 		return new ResponseEntity<>(infoResponse, HttpStatus.OK);
 	}
 
-	@PostMapping(value = "/api/cancel/all", produces = "application/json;charset=utf-8")
-	public ResponseEntity<?> cancelAll(@RequestParam(required = false, value = "opVat") String opVat,
-			PaymentVO paymentVO) {
-		
+	@PostMapping(value = "/cancel", produces = "application/json;charset=utf-8")
+	@ResponseBody
+	public ResponseEntity<?> cancelAll(Payment paymentInput) {		
 		HttpStatus httpStatus;		
 		PaymentResponse paymentResponse = new PaymentResponse();
-		paymentResponse = paymentService.paymentCancel(paymentVO, opVat);
+		paymentResponse = paymentService.paymentCancel(paymentInput);
 		
 		if(paymentResponse == null) {
 			httpStatus = HttpStatus.NO_CONTENT;
@@ -55,11 +53,5 @@ public class PaymentController {
 
 		return new ResponseEntity<>(paymentResponse, httpStatus);
 	}
-
-//	@PostMapping("/api/cancel/part")
-//	public Payment cancelPart(Payment payment) {
-//		System.out.println("REST API : /api/cancel/part ");
-//		return repo.save(payment);
-//	}
-
+	
 }

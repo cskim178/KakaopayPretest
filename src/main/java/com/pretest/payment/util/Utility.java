@@ -2,11 +2,11 @@ package com.pretest.payment.util;
 
 import org.springframework.util.ObjectUtils;
 
-import com.pretest.payment.entity.PaymentVO;
+import com.pretest.payment.entity.Payment;
 
 public final class Utility {
 
-	public static boolean validationCheck(PaymentVO vo) {
+	public static boolean validationCheck(Payment vo) {
 
 //		int idLen = 0;		
 //		if(!ObjectUtils.isEmpty(vo.getId())) {
@@ -22,7 +22,7 @@ public final class Utility {
 
 		return false;
 	}
-	
+
 	public static int calcVat(String strVat, int amount) {
 
 		int vat = 0;
@@ -30,8 +30,8 @@ public final class Utility {
 		try {
 			if (strVat != null) {
 				vat = Integer.valueOf(strVat);
-			}else {
-				vat = (int) Math.round(((double) amount / 11));				
+			} else {
+				vat = (int) Math.round(((double) amount / 11));
 			}
 		} catch (Exception e) {
 			vat = 0;
@@ -96,7 +96,39 @@ public final class Utility {
 
 	}
 
-	public static String makePgString(PaymentVO paymentVO) {
+	public static void encrCardInfo(Payment payment) {
+		AES256Util encr = new AES256Util();
+		if (ObjectUtils.isEmpty(payment.getCardNum())) {
+			payment.setCardNum("");
+		}
+
+		if (ObjectUtils.isEmpty(payment.getMmyy())) {
+			payment.setMmyy("");
+		}
+
+		if (ObjectUtils.isEmpty(payment.getCvc())) {
+			payment.setCvc("");
+		}
+
+		payment.setEncrCardInfo(encr.encrypt(payment.getCardNum() + ConstantsVariable.SYMBOL_SEPARATION
+				+ payment.getMmyy() + ConstantsVariable.SYMBOL_SEPARATION + payment.getCvc()));
+	}
+
+	public static void decrCardInfo(Payment payment) {
+		AES256Util decr = new AES256Util();
+		if (ObjectUtils.isEmpty(payment)) {
+			return;
+		}
+
+		String decrCardInfo = decr.decrypt(payment.getEncrCardInfo());
+		String str[] = decrCardInfo.split(ConstantsVariable.SYMBOL_SEPARATION);
+		payment.setCardNum(str[0]);
+		payment.setMmyy(str[1]);
+		payment.setCvc(str[2]);
+
+	}
+
+	public static String makePgString(Payment paymentVO) {
 
 		String strResult = "";
 
@@ -109,9 +141,10 @@ public final class Utility {
 			dataType = Utility.rPad("PAYMENT", 10, ConstantsVariable.SYMBOL_SPACE);
 		} else if (paymentVO.getPayType().equals(ConstantsVariable.TYPE_CANCLE)) {// 취소
 			dataType = Utility.rPad("CANCEL", 10, ConstantsVariable.SYMBOL_SPACE);
-		} else if (paymentVO.getPayType().equals(ConstantsVariable.TYPE_PART_CANCLE)) {// 부분취소
-			dataType = Utility.rPad("CANCEL", 10, ConstantsVariable.SYMBOL_SPACE);
 		}
+//		else if (paymentVO.getPayType().equals(ConstantsVariable.TYPE_PART_CANCLE)) {// 부분취소
+//			dataType = Utility.rPad("CANCEL", 10, ConstantsVariable.SYMBOL_SPACE);
+//		}
 
 		// 관리번호(문자 20) A_
 		String id = Utility.rPad(paymentVO.getId(), 20, ConstantsVariable.SYMBOL_SPACE);

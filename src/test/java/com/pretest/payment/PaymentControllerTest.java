@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pretest.payment.controller.PaymentController;
-import com.pretest.payment.entity.PaymentVO;
+import com.pretest.payment.entity.Payment;
 
 @SpringBootTest
 @Transactional

@@ -14,7 +14,7 @@ import javax.persistence.Transient;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity(name = "PAYMENT")
-public class PaymentVO {
+public class Payment {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(length = 20)
@@ -31,21 +31,21 @@ public class PaymentVO {
 	private String cardNum;
 
 	@Column(length = 2)
-	private int instMm;
+	private String instMm;
 	
 	@Transient
 	@Column(length = 4)
-	private int mmyy;
+	private String mmyy;
 
 	@Transient
 	@Column(length = 3)
-	private int cvc;
+	private String cvc;
 
 	@Column
 	private int amount;
 
 	@Column
-	private int vat;
+	private Integer vat;
 
 	@Column(length = 20)
 	private String refId;
@@ -54,12 +54,12 @@ public class PaymentVO {
 	@CreationTimestamp
 	private Date create;
 	
-	public PaymentVO() {
+	public Payment() {
 		
 	}
 	
-	public PaymentVO(String id, String payType, String encrCardInfo, String cardNum, int instMm, int mmyy, int cvc,
-			int amount, int vat, String refId, Date create) {
+	public Payment(String id, String payType, String encrCardInfo, String cardNum, String instMm, String mmyy, String cvc,
+			int amount, Integer vat, String refId, Date create) {
 		super();
 		this.id = id;
 		this.payType = payType;
@@ -106,27 +106,27 @@ public class PaymentVO {
 		this.cardNum = cardNum;
 	}
 
-	public int getInstMm() {
+	public String getInstMm() {
 		return instMm;
 	}
 
-	public void setInstMm(int instMm) {
+	public void setInstMm(String instMm) {
 		this.instMm = instMm;
 	}
 
-	public int getMmyy() {
+	public String getMmyy() {
 		return mmyy;
 	}
 
-	public void setMmyy(int mmyy) {
+	public void setMmyy(String mmyy) {
 		this.mmyy = mmyy;
 	}
 
-	public int getCvc() {
+	public String getCvc() {
 		return cvc;
 	}
 
-	public void setCvc(int cvc) {
+	public void setCvc(String cvc) {
 		this.cvc = cvc;
 	}
 
@@ -138,11 +138,11 @@ public class PaymentVO {
 		this.amount = amount;
 	}
 
-	public int getVat() {
+	public Integer getVat() {
 		return vat;
 	}
 
-	public void setVat(int vat) {
+	public void setVat(Integer vat) {
 		this.vat = vat;
 	}
 	

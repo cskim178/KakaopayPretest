@@ -4,8 +4,8 @@ public class InfoResponse {
 	
 	private String id;	
 	private String cardNum;	
-	private int mmyy;
-	private int cvc;	
+	private String mmyy;
+	private String cvc;	
 	private String payType;	
 	private int amount;
 	private int vat;
@@ -21,16 +21,16 @@ public class InfoResponse {
 	public void setCardNum(String cardNum) {
 		this.cardNum = cardNum;
 	}
-	public int getMmyy() {
+	public String getMmyy() {
 		return mmyy;
 	}
-	public void setMmyy(int mmyy) {
+	public void setMmyy(String mmyy) {
 		this.mmyy = mmyy;
 	}
-	public int getCvc() {
+	public String getCvc() {
 		return cvc;
 	}
-	public void setCvc(int cvc) {
+	public void setCvc(String cvc) {
 		this.cvc = cvc;
 	}
 	public String getPayType() {
