@@ -23,7 +23,7 @@
 5. Run Spring Boot
 
 ## 도메인(ENTITY)
-- PAYMENT 결재정보
+- PAYMENT 결정보
     - ID(관리번호 - ID), PAY_TYPE(결제유형), ENCR_CARD_INFO(암호화된 카드정보), INST_MM(할부개월수), VAT(부가세), REF_ID(원거래관리번호), CREATE(생성일시) 
 - TRANSACTION 카드사와 통신
     - CONTENT(카드사에 전달한 데이터 - ID)
