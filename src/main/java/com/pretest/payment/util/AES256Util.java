@@ -1,12 +1,8 @@
 package com.pretest.payment.util;
 
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -30,7 +26,7 @@ public final class AES256Util {
 				len = keyBytes.length;
 			}
 			System.arraycopy(b, 0, keyBytes, 0, len);
-		} catch (UnsupportedEncodingException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -66,9 +62,6 @@ public final class AES256Util {
 			c.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv.getBytes()));
 			byteStr = Base64.decodeBase64(str.getBytes());
 			decrStr = new String(c.doFinal(byteStr), "UTF-8");
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -18,5 +18,9 @@ public class PaymentResponse {
 		this.content = content;
 	}
 	
+	@Override
+	public String toString() {
+		return "PaymentResponse [id=" + id + ", content=" + content + "]";
+	}
 	
 }

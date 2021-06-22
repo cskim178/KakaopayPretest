@@ -30,8 +30,8 @@ public class Payment {
 	@Column(length = 20)
 	private String cardNum;
 
-	@Column(length = 2)
-	private String instMm;
+	@Column
+	private int instMm;
 	
 	@Transient
 	@Column(length = 4)
@@ -46,7 +46,7 @@ public class Payment {
 
 	@Column
 	private Integer vat;
-
+	
 	@Column(length = 20)
 	private String refId;
 
@@ -58,7 +58,7 @@ public class Payment {
 		
 	}
 	
-	public Payment(String id, String payType, String encrCardInfo, String cardNum, String instMm, String mmyy, String cvc,
+	public Payment(String id, String payType, String encrCardInfo, String cardNum, int instMm, String mmyy, String cvc,
 			int amount, Integer vat, String refId, Date create) {
 		super();
 		this.id = id;
@@ -106,11 +106,11 @@ public class Payment {
 		this.cardNum = cardNum;
 	}
 
-	public String getInstMm() {
+	public int getInstMm() {
 		return instMm;
 	}
 
-	public void setInstMm(String instMm) {
+	public void setInstMm(int instMm) {
 		this.instMm = instMm;
 	}
 
@@ -164,9 +164,9 @@ public class Payment {
 
 	@Override
 	public String toString() {
-		return "id : " + id + ", payType : " + payType + ", encrCardInfo : " + encrCardInfo + ", instMm : " + instMm
-				+ ", amount : " + amount + ", vat : " + vat + ", refId : " + refId + ", cardNum : " + cardNum + ", mmyy : "
-				+ mmyy + ", cvc : " + cvc + ", vat : " + vat;
+		return "Payment [id=" + id + ", payType=" + payType + ", encrCardInfo=" + encrCardInfo + ", cardNum=" + cardNum
+				+ ", instMm=" + instMm + ", mmyy=" + mmyy + ", cvc=" + cvc + ", amount=" + amount + ", vat=" + vat
+				+ ", refId=" + refId + ", create=" + create + "]";
 	}
 
 }
